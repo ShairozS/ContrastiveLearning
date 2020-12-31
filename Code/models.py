@@ -34,11 +34,13 @@ class ContrastiveModel(nn.Module):
         self.projector = nn.Linear(in_features=9216, out_features=emb_size)
         
         
-       def forward(self, x):
+    def forward(self, x):
         
-            b, c, h, w = x.shape
-            assert (h==w and h==105), "Inputs must be shaped (B, in_channels, 105, 105)
+        b, c, h, w = x.shape
+        assert (h==w and h==105), "Inputs must be shaped (B, in_channels, 105, 105)"
 
-            emb = self.backbone(x); emb = self.projector(emb)
+        emb = self.backbone(x); b,c,h,w = emb.shape
+        emb = emb.view(b, c*h*w)
+        emb = self.projector(emb)
 
-            return(emb)
+        return(emb)

@@ -2,12 +2,20 @@ from torch import nn
 
 
 
-class SiameseModel(nn.Module):
+class ContrastiveModel(nn.Module):
+    '''
+    A model to produce embedding vectors given an input batched tensor of images
     
+    * Note: Input images must be batched tensors of shape (B, in_channels, 105, 105)
     
-    def __init__(self, in_channels=3):
+    Args:
+      in_channels (int) : The number of channels in the input image (default=3)
+      emb_size (int): The length of the produced embeddings (default=4096)
+    '''
+    
+    def __init__(self, in_channels=3, emb_size=4096):
         
-        super(SiameseModel, self).__init__()
+        super(ContrastiveModel, self).__init__()
         
         self.backbone = nn.Sequential(
                 nn.Conv2d(in_channels=in_channels, out_channels=64, kernel_size=10),
@@ -23,6 +31,16 @@ class SiameseModel(nn.Module):
                 nn.ReLU())
         
         
-        self.fc = nn.Sequential(nn.Linear(in_features=9216, out_features=4096), 
-                                nn.Linear(in_features=4096, out_features=1),
-                                nn.Sigmoid())
+        self.projector = nn.Linear(in_features=9216, out_features=emb_size)
+        
+        
+    def forward(self, x):
+        
+        b, c, h, w = x.shape
+        assert (h==w and h==105), "Inputs must be shaped (B, in_channels, 105, 105)"
+
+        emb = self.backbone(x); b,c,h,w = emb.shape
+        emb = emb.view(b, c*h*w)
+        emb = self.projector(emb)
+
+        return(emb)
