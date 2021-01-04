@@ -44,3 +44,23 @@ class ContrastiveModel(nn.Module):
         emb = self.projector(emb)
 
         return(emb)
+    
+    
+    def predict(self, x, y, threshold):
+        b, c, h, w = x.shape
+        assert (h==w and h==105), "Inputs must be shaped (B, in_channels, 105, 105)"
+        
+        self.model.eval()
+        
+        emb1 = self.forward(x)
+        emb2 = self.forward(y)
+        diff = (emb2 - emb1)**2
+        diff_norm = torch.norm(diff)
+        
+        if diff_norm.item() > threshold:
+            return(0)
+        
+        elif diff_norm.item() <= threshold:
+            return(1)
+        
+        return(-1)
